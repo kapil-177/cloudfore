@@ -46,7 +46,41 @@ export const register = asyncHandler(async (req, res) => {
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email: email.toLowerCase() });
+  const normalizedEmail = email.toLowerCase();
+  const demoEmail = (process.env.DEMO_EMAIL || "demo@cloudfore.dev").toLowerCase();
+  const demoPassword = process.env.DEMO_PASSWORD || "demo12345";
+  const demoName = process.env.DEMO_NAME || "Cloud Admin";
+
+  let user = await User.findOne({ email: normalizedEmail });
+
+  // Keep the hosted demo account usable even if seeded credentials drift.
+  if (normalizedEmail === demoEmail && password === demoPassword) {
+    const hashedPassword = await bcrypt.hash(demoPassword, 10);
+
+    if (user) {
+      user.name = demoName;
+      user.password = hashedPassword;
+      user.role = user.role || "Admin";
+      user.projectName = user.projectName || "Cloud Resource Forecasting";
+      user.lastLoginAt = new Date();
+      await user.save();
+    } else {
+      user = await User.create({
+        name: demoName,
+        email: demoEmail,
+        password: hashedPassword,
+        role: "Admin",
+        projectName: "Cloud Resource Forecasting"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      ...authResponse(user)
+    });
+    return;
+  }
 
   if (!user) {
     throw new AppError("User not found", 401);
