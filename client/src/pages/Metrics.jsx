@@ -1,42 +1,67 @@
 import { useEffect, useState } from "react";
-
 import { getLiveMetricsApi, getMetricsHistoryApi } from "../api/metricsApi";
 
 export default function Metrics() {
+
   const [cpu, setCpu] = useState(null);
   const [memory, setMemory] = useState(null);
   const [load, setLoad] = useState(null);
 
   const [history, setHistory] = useState([]);
   const [connected, setConnected] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
+
     const fetchAll = async () => {
+
       try {
+
         const [liveResponse, historyResponse] = await Promise.all([
           getLiveMetricsApi(),
           getMetricsHistoryApi(null, 40)
         ]);
 
-        const metrics = liveResponse.data.data;
-        const historyItems = historyResponse.data.data || [];
+        const metrics = liveResponse?.data?.data || {};
+        const historyItems = historyResponse?.data?.data || [];
+        const cpuHistory = historyItems
+          .map((entry) => entry?.cpuUsage)
+          .filter((value) => typeof value === "number")
+          .slice(-40);
 
         setConnected(true);
-        setCpu(metrics.cpuUsage);
-        setMemory(metrics.memory);
-        setLoad(metrics.load);
-        setHistory(historyItems.map((entry) => entry.cpuUsage));
-      } catch {
+
+        setCpu(metrics.cpuUsage ?? 0);
+        setMemory(metrics.memory ?? null);
+        setLoad(metrics.load ?? null);
+        setHistory(
+          cpuHistory.length
+            ? cpuHistory
+            : typeof metrics.cpuUsage === "number"
+            ? [metrics.cpuUsage]
+            : []
+        );
+        setLastUpdated(new Date());
+
+      } catch (error) {
+
+        console.error("Metrics fetch error:", error);
         setConnected(false);
+
       }
+
     };
 
     fetchAll();
-    const t = setInterval(fetchAll, 2000);
-    return () => clearInterval(t);
+
+    const interval = setInterval(fetchAll, 2000);
+
+    return () => clearInterval(interval);
+
   }, []);
 
   function exportCSV() {
+
     const rows = [];
 
     rows.push(["timestamp", "cpu_usage_percent"]);
@@ -45,8 +70,13 @@ export default function Metrics() {
     const interval = 2000;
 
     history.forEach((v, i) => {
-      const ts = new Date(now - (history.length - i) * interval).toISOString();
+
+      const ts = new Date(
+        now - (history.length - i) * interval
+      ).toISOString();
+
       rows.push([ts, v]);
+
     });
 
     const csv = rows.map((r) => r.join(",")).join("\n");
@@ -60,34 +90,48 @@ export default function Metrics() {
     a.click();
 
     URL.revokeObjectURL(url);
+
   }
 
   return (
     <div style={styles.page}>
+
       <div style={styles.headerRow}>
+
         <div>
           <h1 style={{ marginBottom: 6 }}>System Metrics</h1>
-          <p style={styles.sub}>Live resource monitoring from your machine</p>
+          <p style={styles.sub}>
+            Live resource monitoring from your machine
+          </p>
+          <p style={styles.statusText}>
+            {connected ? "Live stream connected" : "Reconnecting to backend"}
+            {lastUpdated
+              ? ` | Updated ${lastUpdated.toLocaleTimeString()}`
+              : ""}
+          </p>
         </div>
 
         <button style={styles.exportBtn} onClick={exportCSV}>
           Export CSV
         </button>
+
       </div>
 
-      {/* top cards */}
       <div style={styles.topGrid}>
-        {/* CPU */}
+
         <div style={styles.card}>
           <span style={styles.label}>CPU usage</span>
-          <div style={styles.big}>{cpu ?? "—"}%</div>
+
+          <div style={styles.big}>
+            {cpu !== null ? `${cpu}%` : "—"}
+          </div>
 
           <Bar value={cpu || 0} />
         </div>
 
-        {/* Memory */}
         <div style={styles.card}>
           <span style={styles.label}>Memory usage</span>
+
           <div style={styles.big}>
             {memory ? `${memory.usage}%` : "—"}
           </div>
@@ -102,19 +146,23 @@ export default function Metrics() {
           )}
         </div>
 
-        {/* Load */}
         <div style={styles.card}>
+
           <span style={styles.label}>System load</span>
 
           {load &&
           load.load1 === 0 &&
           load.load5 === 0 &&
           load.load15 === 0 ? (
+
             <p style={styles.small}>
               Load average not supported on Windows
             </p>
+
           ) : (
+
             <div style={styles.loadRow}>
+
               <div>
                 <strong>1m</strong>
                 <div>{load ? load.load1.toFixed(2) : "—"}</div>
@@ -129,14 +177,17 @@ export default function Metrics() {
                 <strong>15m</strong>
                 <div>{load ? load.load15.toFixed(2) : "—"}</div>
               </div>
+
             </div>
+
           )}
 
           <p style={styles.small}>OS load average</p>
+
         </div>
 
-        {/* Backend */}
         <div style={styles.card}>
+
           <span style={styles.label}>Backend</span>
 
           <div
@@ -151,16 +202,23 @@ export default function Metrics() {
 
           <p style={styles.small}>Source: Node OS module</p>
           <p style={styles.small}>Refresh: 2 seconds</p>
+
         </div>
+
       </div>
 
-      {/* graph */}
       <div style={styles.graphCard}>
+
         <h3 style={{ marginTop: 0 }}>CPU usage timeline</h3>
-        <p style={styles.graphSub}>Live samples from your system</p>
+
+        <p style={styles.graphSub}>
+          Live samples from your system
+        </p>
 
         <Graph data={history} />
+
       </div>
+
     </div>
   );
 }
@@ -168,8 +226,10 @@ export default function Metrics() {
 /* ------------------------- */
 
 function Bar({ value }) {
+
   return (
     <div style={styles.barWrap}>
+
       <div
         style={{
           ...styles.bar,
@@ -182,6 +242,7 @@ function Bar({ value }) {
               : "linear-gradient(90deg,#22c55e,#16a34a)"
         }}
       />
+
     </div>
   );
 }
@@ -189,22 +250,31 @@ function Bar({ value }) {
 /* ------------------------- */
 
 function Graph({ data }) {
+
   const w = 800;
   const h = 240;
   const pad = 24;
 
   if (!data.length) {
-    return <p style={{ color: "#6b7280" }}>Waiting for samples…</p>;
+    return (
+      <p style={{ color: "#6b7280" }}>
+        Waiting for samples…
+      </p>
+    );
   }
 
   const pts = data.map((v, i) => {
-    const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+
+    const x = pad + (i / Math.max(data.length - 1, 1)) * (w - pad * 2);
     const y = h - pad - (v / 100) * (h - pad * 2);
+
     return `${x},${y}`;
+
   });
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%" }}>
+
       {[0.25, 0.5, 0.75].map((g, i) => (
         <line
           key={i}
@@ -230,6 +300,7 @@ function Graph({ data }) {
         y2={h - pad}
         stroke="#e5e7eb"
       />
+
     </svg>
   );
 }
@@ -237,6 +308,7 @@ function Graph({ data }) {
 /* ------------------------- */
 
 const styles = {
+
   page: {
     minHeight: "100vh",
     padding: 40,
@@ -265,6 +337,12 @@ const styles = {
 
   sub: {
     color: "#6b7280",
+    marginBottom: 28
+  },
+
+  statusText: {
+    color: "#475569",
+    fontSize: 14,
     marginBottom: 28
   },
 
@@ -333,4 +411,5 @@ const styles = {
     color: "#6b7280",
     fontSize: 13
   }
+
 };

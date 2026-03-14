@@ -1,11 +1,11 @@
-import express from "express";
+import { Router } from "express";
+import {
+  getLiveMetrics,
+  getMetricsHistory
+} from "../controllers/metrics.controller.js";
 
-import authMiddleware from "../middlewares/auth.middleware.js";
-import { getLiveMetrics, getMetricsHistory } from "../controllers/metrics.controller.js";
+const router = Router();
 
-const router = express.Router();
-
-router.use(authMiddleware);
 router.get("/live", getLiveMetrics);
 router.get("/history", getMetricsHistory);
 
