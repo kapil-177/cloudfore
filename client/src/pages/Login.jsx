@@ -41,7 +41,7 @@ export default function Login() {
           <div className="auth-stat-grid">
             <div className="stat-chip">
               <span>Monitoring</span>
-              <strong>2s live sync</strong>
+              <strong>5s live refresh</strong>
             </div>
             <div className="stat-chip">
               <span>Insights</span>
