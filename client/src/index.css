@@ -104,11 +104,11 @@ a {
 }
 
 .auth-card {
-  width: min(100%, 1080px);
+  width: min(100%, 1120px);
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 420px);
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
+  gap: 28px;
+  align-items: center;
 }
 
 .auth-hero,
@@ -130,11 +130,12 @@ a {
 }
 
 .auth-hero {
-  padding: 36px;
+  padding: 42px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 620px;
+  gap: 28px;
+  min-height: 580px;
 }
 
 .auth-kicker,
@@ -149,6 +150,7 @@ a {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.02em;
+  align-self: flex-start;
 }
 
 .auth-title,
@@ -160,9 +162,9 @@ a {
 }
 
 .auth-title {
-  margin: 18px 0 14px;
-  font-size: clamp(2.5rem, 5vw, 4.7rem);
-  max-width: 10ch;
+  margin: 0 0 14px;
+  font-size: clamp(2.8rem, 4.8vw, 4.9rem);
+  max-width: 8.8ch;
 }
 
 .auth-copy,
@@ -170,6 +172,11 @@ a {
 .page-subtitle {
   color: var(--text-soft);
   line-height: 1.6;
+}
+
+.auth-copy {
+  max-width: 34rem;
+  font-size: 1.05rem;
 }
 
 .auth-stat-grid,
@@ -223,6 +230,7 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-height: 580px;
 }
 
 .app-shell {

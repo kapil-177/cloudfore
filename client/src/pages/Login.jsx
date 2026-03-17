@@ -31,8 +31,7 @@ export default function Login() {
       <div className="auth-card">
         <section className="auth-hero">
           <div>
-            <span className="auth-kicker">Phase 3 ready dashboard</span>
-            <h1 className="auth-title">Forecast cloud demand before costs spike.</h1>
+            <h1 className="auth-title">Forecast cloud usage before costs spike.</h1>
             <p className="auth-copy">
               CloudFore combines service tracking, live infrastructure metrics,
               and short-term forecasting in one clean control room.
