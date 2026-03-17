@@ -1,12 +1,12 @@
 import { Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Services from "./pages/Services";
-import Metrics from "./pages/Metrics";
-import Forecast from "./pages/Forecast";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
+import Dashboard from "./pages/DashboardPage";
+import Services from "./pages/ServicesPage";
+import Metrics from "./pages/MetricsPage";
+import Forecast from "./pages/ForecastPage";
+import Profile from "./pages/ProfilePage";
+import Settings from "./pages/SettingsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {

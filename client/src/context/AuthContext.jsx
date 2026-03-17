@@ -13,6 +13,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const darkMode = user?.settings?.darkMode;
+    document.documentElement.dataset.theme = darkMode ? "dark" : "light";
+  }, [user?.settings?.darkMode]);
+
+  useEffect(() => {
     async function restoreSession() {
       if (!token) {
         setLoading(false);

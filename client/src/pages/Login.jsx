@@ -11,8 +11,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setSubmitting(true);
     setError("");
 
@@ -27,126 +27,87 @@ export default function Login() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.iconWrap}>
-          ☁️
-        </div>
+    <div className="auth-page">
+      <div className="auth-card">
+        <section className="auth-hero">
+          <div>
+            <span className="auth-kicker">Phase 3 ready dashboard</span>
+            <h1 className="auth-title">Forecast cloud demand before costs spike.</h1>
+            <p className="auth-copy">
+              CloudFore combines service tracking, live infrastructure metrics,
+              and short-term forecasting in one clean control room.
+            </p>
+          </div>
 
-        <h2 style={styles.title}>Cloud Resource Forecasting</h2>
-        <p style={styles.sub}>Predict. Plan. Optimize.</p>
+          <div className="auth-stat-grid">
+            <div className="stat-chip">
+              <span>Monitoring</span>
+              <strong>2s live sync</strong>
+            </div>
+            <div className="stat-chip">
+              <span>Insights</span>
+              <strong>CPU + memory trends</strong>
+            </div>
+            <div className="stat-chip">
+              <span>Planning</span>
+              <strong>Forecast recommendations</strong>
+            </div>
+          </div>
+        </section>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+        <section className="auth-panel">
+          <span className="eyebrow">Secure access</span>
+          <h2 style={{ margin: "16px 0 8px", fontFamily: "var(--font-display)", fontSize: "2rem" }}>
+            Welcome back
+          </h2>
+          <p className="page-subtitle" style={{ marginBottom: 24 }}>
+            Sign in to review live metrics, manage services, and prepare your deployment demo.
+          </p>
 
-          <input
-            style={styles.input}
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <form className="stack" onSubmit={handleSubmit}>
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                className="text-input"
+                placeholder="demo@cloudfore.dev"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+              />
+            </div>
 
-          <button
-            type="submit"
-            style={styles.button}
-            onMouseOver={(e) =>
-              (e.currentTarget.style.transform = "translateY(-2px)")
-            }
-            onMouseOut={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
-            disabled={submitting}
-          >
-            {submitting ? "Logging in..." : "Login"}
-          </button>
-        </form>
-        <p style={styles.hint}>Demo: demo@cloudfore.dev / demo12345</p>
-        {error ? <p style={styles.error}>{error}</p> : null}
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                className="text-input"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+
+            <button type="submit" className="primary-button" disabled={submitting}>
+              {submitting ? "Signing in..." : "Enter dashboard"}
+            </button>
+          </form>
+
+          <div className="panel" style={{ marginTop: 20, padding: 18 }}>
+            <span className="section-label">Demo credentials</span>
+            <strong style={{ display: "block", marginBottom: 6 }}>demo@cloudfore.dev</strong>
+            <p className="muted-text" style={{ marginTop: 0 }}>Password: demo12345</p>
+          </div>
+
+          {error ? (
+            <p style={{ margin: "14px 0 0", color: "var(--danger)", fontWeight: 600 }}>
+              {error}
+            </p>
+          ) : null}
+        </section>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background:
-      "radial-gradient(circle at top left, #c7f0ff, #e9e7ff, #ffe6fa)",
-    fontFamily: "system-ui"
-  },
-
-  card: {
-    width: 360,
-    padding: "36px 32px",
-    borderRadius: 20,
-    background: "rgba(255,255,255,0.85)",
-    backdropFilter: "blur(10px)",
-    boxShadow: "0 30px 60px rgba(0,0,0,0.12)",
-    textAlign: "center"
-  },
-
-  iconWrap: {
-    fontSize: 24,
-    marginBottom: 10,
-    fontWeight: 700,
-    color: "#4f46e5"
-  },
-
-  title: {
-    marginBottom: 6
-  },
-
-  sub: {
-    marginBottom: 24,
-    color: "#6b7280",
-    fontSize: 14
-  },
-
-input: {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "12px 14px",
-  marginBottom: 14,
-  borderRadius: 10,
-  border: "1px solid #e5e7eb",
-  outline: "none",
-  fontSize: 14,
-  display: "block"
-},
-
-  button: {
-    width: "100%",
-    padding: "12px",
-    borderRadius: 12,
-    border: "none",
-    background: "linear-gradient(90deg,#0ea5e9,#6366f1)",
-    color: "#fff",
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "all .2s ease",
-    boxShadow: "0 10px 20px rgba(99,102,241,0.35)"
-  },
-
-  hint: {
-    marginTop: 16,
-    marginBottom: 0,
-    color: "#6b7280",
-    fontSize: 13
-  },
-
-  error: {
-    marginTop: 12,
-    marginBottom: 0,
-    color: "#dc2626",
-    fontSize: 13
-  }
-};
