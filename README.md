@@ -24,6 +24,91 @@ cloudfore/
 - Phase 2: REST API, MongoDB integration, JWT auth, full CRUD for projects, validation and error handling
 - Phase 3: polished UI flow, forecast logic, cleaner code organization, performance-minded API/UI structure, deployment-ready configuration
 
+## Phase 3 Highlights
+
+- Refined multi-page UI with protected routes, cleaner empty states, retry states, and session restore loading
+- Search, filter, and sort support on the services page for better usability during demos
+- Live metrics dashboard with CPU, memory, load, and CSV export
+- Short-term forecasting using recent metric history and derived prediction summaries
+- Production deployment setup for Vercel frontend, Render backend, and MongoDB Atlas
+
+## Core Features
+
+- Demo login with JWT-based authentication
+- Protected dashboard, services, metrics, forecast, profile, and settings pages
+- Create, update, delete, and monitor cloud services
+- Search services by name, type, environment, and region
+- Filter services by status and type
+- Sort services by newest, oldest, and alphabetical order
+- Track live CPU, memory, and system load data
+- Export CPU metrics history to CSV
+- Forecast upcoming CPU and memory usage from recent samples
+
+## Viva Summary
+
+### Problem Statement
+
+CloudFore helps users monitor cloud-style services, observe live system resource usage, and make short-term capacity decisions using forecasted CPU and memory trends.
+
+### Why This Project Is Useful
+
+- Basic CRUD apps only store records
+- CloudFore adds live monitoring and prediction on top of CRUD
+- This makes the project more practical for planning and operational decision-making
+
+### Architecture Flow
+
+1. The user logs in through the React frontend.
+2. The Express backend validates credentials and returns a JWT.
+3. The frontend stores the token and attaches it to protected API requests.
+4. Project and metrics routes return live system and stored data from MongoDB.
+5. The forecast service processes historical metrics and returns predicted usage values.
+
+### Tech Stack Explanation
+
+- React + Vite: fast single-page frontend
+- Axios: API communication layer
+- Express: REST API backend
+- MongoDB + Mongoose: persistent storage for users, projects, and metrics
+- JWT: authentication and protected routes
+- Vercel + Render + MongoDB Atlas: production deployment stack
+
+## Testing And Edge Cases Covered
+
+- Invalid login credentials return an error instead of a blank screen
+- Protected routes wait for session restore before rendering
+- Services page handles:
+  empty service list
+  failed API request
+  filtered results returning zero matches
+- Metrics and forecast pages handle:
+  backend disconnects
+  missing live samples
+  retry and fallback UI states
+- Production login avoids accidental localhost API calls in deployed builds
+
+## Challenges Faced And Solutions
+
+- Deployment login failed because the frontend could resolve to a localhost API URL in production
+- Solution: production API base URL logic now ignores localhost config on hosted builds and falls back to the Vercel `/api` rewrite
+
+- Metrics and forecast pages could feel broken when the backend was slow or unavailable
+- Solution: added explicit loading, empty, and retry/error states
+
+- Services management was functional but not evaluator-friendly
+- Solution: added search, filter, sort, and better list feedback for usability
+
+## Screenshots
+
+Add these before final submission:
+
+- Login page
+- Dashboard
+- Services with search/filter/sort
+- Metrics page
+- Forecast page
+- Deployment/live URL
+
 ## Demo Login
 
 - Email: `demo@cloudfore.dev`
@@ -135,3 +220,12 @@ Until then, the working local URLs are:
 
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:5000`
+
+## Submission Checklist
+
+- Frontend deployed and accessible from Vercel
+- Backend deployed and accessible from Render
+- MongoDB Atlas connected
+- Demo login working on the live site
+- README updated with features, architecture, and deployment
+- Screenshots added for final report or PPT

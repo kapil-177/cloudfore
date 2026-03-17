@@ -7,6 +7,7 @@ import {
   getServicesApi,
   updateServiceApi
 } from "../api/serviceApi";
+import Loader, { EmptyState, ErrorState } from "../components/Loader";
 
 export default function Services() {
   const location = useLocation();
@@ -22,6 +23,10 @@ export default function Services() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
     if (location.state?.openCreate) {
@@ -32,10 +37,12 @@ export default function Services() {
   useEffect(() => {
     async function loadServices() {
       try {
+        setLoading(true);
         const response = await getServicesApi();
         const nextServices = response.data.data || [];
         setServices(nextServices);
         localStorage.setItem("services", JSON.stringify(nextServices));
+        setError("");
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load services");
       } finally {
@@ -108,6 +115,62 @@ export default function Services() {
     }
   }
 
+  async function reloadServices() {
+    try {
+      setLoading(true);
+      const response = await getServicesApi();
+      const nextServices = response.data.data || [];
+      setServices(nextServices);
+      localStorage.setItem("services", JSON.stringify(nextServices));
+      setError("");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load services");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredServices = services
+    .filter((service) => {
+      const query = search.trim().toLowerCase();
+
+      if (!query) {
+        return true;
+      }
+
+      return [service.name, service.desc, service.type, service.env, service.region]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(query));
+    })
+    .filter((service) => {
+      if (statusFilter === "All") {
+        return true;
+      }
+
+      return service.status === statusFilter;
+    })
+    .filter((service) => {
+      if (typeFilter === "All") {
+        return true;
+      }
+
+      return service.type === typeFilter;
+    })
+    .sort((left, right) => {
+      if (sortBy === "name-asc") {
+        return left.name.localeCompare(right.name);
+      }
+
+      if (sortBy === "name-desc") {
+        return right.name.localeCompare(left.name);
+      }
+
+      const leftTime = new Date(left.createdAt || 0).getTime();
+      const rightTime = new Date(right.createdAt || 0).getTime();
+
+      return sortBy === "oldest" ? leftTime - rightTime : rightTime - leftTime;
+    });
+
   return (
     <div style={styles.page}>
       <div style={styles.headerRow}>
@@ -122,8 +185,6 @@ export default function Services() {
       </div>
 
       <div style={styles.contentWrap}>
-        {error ? <div style={styles.error}>{error}</div> : null}
-
         {showForm && (
           <form onSubmit={addService} style={styles.createCard}>
             <h3 style={{ marginTop: 0, marginBottom: 16 }}>
@@ -219,11 +280,102 @@ export default function Services() {
           </form>
         )}
 
+        <div style={styles.toolbar}>
+          <input
+            style={{ ...styles.input, ...styles.searchInput }}
+            placeholder="Search by name, type, environment, or region"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            style={styles.input}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option>All</option>
+            <option>Running</option>
+            <option>Stopped</option>
+            <option>Paused</option>
+          </select>
+
+          <select
+            style={styles.input}
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option>All</option>
+            <option>API</option>
+            <option>Worker</option>
+            <option>Database</option>
+            <option>Scheduler</option>
+          </select>
+
+          <select
+            style={styles.input}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+          </select>
+        </div>
+
+        {!loading && !error ? (
+          <div style={styles.summaryRow}>
+            <span>{filteredServices.length} services shown</span>
+            <button
+              type="button"
+              style={styles.textBtn}
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("All");
+                setTypeFilter("All");
+                setSortBy("newest");
+              }}
+            >
+              Reset filters
+            </button>
+          </div>
+        ) : null}
+
         {loading ? (
-          <div style={styles.emptyState}>Loading services...</div>
+          <Loader label="Loading services..." />
+        ) : error ? (
+          <ErrorState
+            title="Could not load services"
+            message={error}
+            action={
+              <button type="button" style={styles.primaryBtn} onClick={reloadServices}>
+                Try again
+              </button>
+            }
+          />
+        ) : filteredServices.length === 0 ? (
+          <EmptyState
+            title={services.length ? "No services match these filters" : "No services yet"}
+            message={
+              services.length
+                ? "Try a different search or filter combination."
+                : "Create your first service to start tracking resources and forecasts."
+            }
+            action={
+              !services.length ? (
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  onClick={() => setShowForm(true)}
+                >
+                  Create service
+                </button>
+              ) : null
+            }
+          />
         ) : (
         <div style={styles.list}>
-          {services.map(s => (
+          {filteredServices.map(s => (
             <div key={s.id} style={styles.serviceCard}>
               <div>
                 <strong>{s.name}</strong>
@@ -289,6 +441,18 @@ const styles = {
     flexDirection: "column",
     gap: 24
   },
+  toolbar: {
+    display: "grid",
+    gridTemplateColumns: "minmax(240px,2fr) repeat(3, minmax(140px,1fr))",
+    gap: 12
+  },
+  summaryRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    color: "#64748b",
+    fontSize: 14
+  },
 
   grid2: {
     display: "grid",
@@ -337,6 +501,9 @@ const styles = {
     outline: "none",
     background: "#f9fafb"
   },
+  searchInput: {
+    background: "white"
+  },
 
   toggleRow: {
     display: "flex",
@@ -352,20 +519,6 @@ const styles = {
   },
 
   list: { display: "grid", gap: 16 },
-  emptyState: {
-    background: "white",
-    borderRadius: 16,
-    padding: 20,
-    color: "#6b7280",
-    boxShadow: "0 15px 30px rgba(0,0,0,0.06)"
-  },
-  error: {
-    background: "#fee2e2",
-    color: "#991b1b",
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 14
-  },
 
   serviceCard: {
     background: "white",
@@ -403,5 +556,13 @@ const styles = {
     color: "#b91c1c",
     cursor: "pointer",
     fontWeight: 600
+  },
+  textBtn: {
+    border: "none",
+    background: "transparent",
+    color: "#4f46e5",
+    cursor: "pointer",
+    fontWeight: 600,
+    padding: 0
   }
 };
