@@ -63,6 +63,10 @@ const projectSchema = new mongoose.Schema(
   }
 );
 
+projectSchema.index({ owner: 1, createdAt: -1 });
+projectSchema.index({ owner: 1, status: 1, type: 1 });
+projectSchema.index({ owner: 1, name: 1 });
+
 const Project = mongoose.model("Project", projectSchema);
 
 export default Project;

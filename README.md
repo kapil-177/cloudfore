@@ -28,8 +28,10 @@ cloudfore/
 
 - Refined multi-page UI with protected routes, cleaner empty states, retry states, and session restore loading
 - Search, filter, and sort support on the services page for better usability during demos
+- Paginated services API and UI controls for smoother performance on larger datasets
 - Live metrics dashboard with CPU, memory, load, and CSV export
 - Short-term forecasting using recent metric history and derived prediction summaries
+- Toast feedback, route-level code splitting, and lightweight OpenAPI documentation
 - Production deployment setup for Vercel frontend, Render backend, and MongoDB Atlas
 
 ## Core Features
@@ -40,6 +42,7 @@ cloudfore/
 - Search services by name, type, environment, and region
 - Filter services by status and type
 - Sort services by newest, oldest, and alphabetical order
+- Paginate service results with backend-supported page metadata
 - Track live CPU, memory, and system load data
 - Export CPU metrics history to CSV
 - Forecast upcoming CPU and memory usage from recent samples
@@ -159,6 +162,7 @@ This project includes production deployment configuration for:
 - Frontend on Vercel: [client/vercel.json](/d:/COLLEGE/PROJECT/cloudfore/client/vercel.json)
 - Backend on Render: [render.yaml](/d:/COLLEGE/PROJECT/cloudfore/render.yaml)
 - CI/CD with GitHub Actions: [.github/workflows/ci-cd.yml](/d:/COLLEGE/PROJECT/cloudfore/.github/workflows/ci-cd.yml)
+- API docs: [server/src/docs/openapi.js](/d:/COLLEGE/PROJECT/cloudfore/server/src/docs/openapi.js)
 
 ### 1. Deploy MongoDB
 
@@ -220,6 +224,7 @@ Until then, the working local URLs are:
 
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:5000`
+- API docs: `http://localhost:5000/api/docs`
 
 ## Submission Checklist
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { getForecastApi } from "../api/forecastApi";
@@ -43,7 +43,7 @@ export default function DashboardPage() {
     confidence: "--"
   });
 
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async () => {
     try {
       setLoading(true);
       const [servicesResponse, metricsResponse, forecastResponse] = await Promise.all([
@@ -73,11 +73,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadDashboard();
-  }, []);
+  }, [loadDashboard]);
 
   return (
     <AppShell

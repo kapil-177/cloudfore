@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { getLiveMetricsApi, getMetricsHistoryApi } from "../api/metricsApi";
 import AppShell from "../components/AppShell";
 import Loader, { EmptyState, ErrorState } from "../components/Loader";
+import { useToast } from "../context/ToastContext";
 import usePolling from "../hooks/usePolling";
 
 function getProgressTone(value) {
@@ -18,6 +19,7 @@ function getProgressTone(value) {
 }
 
 export default function MetricsPage() {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [connected, setConnected] = useState(true);
@@ -29,7 +31,7 @@ export default function MetricsPage() {
     history: []
   });
 
-  async function loadMetrics() {
+  const loadMetrics = useCallback(async () => {
     try {
       const [liveResponse, historyResponse] = await Promise.all([
         getLiveMetricsApi(),
@@ -58,11 +60,20 @@ export default function MetricsPage() {
       setLastUpdated(new Date());
       setLoading(false);
     }
-  }
+  }, []);
 
   usePolling(loadMetrics, 5000);
 
   function exportCSV() {
+    if (!metrics.history.length) {
+      showToast({
+        title: "No metrics to export",
+        description: "Wait for a few samples before exporting CSV.",
+        tone: "error"
+      });
+      return;
+    }
+
     const rows = [["timestamp", "cpu_usage_percent"]];
     const now = Date.now();
     const interval = 5000;
@@ -83,6 +94,12 @@ export default function MetricsPage() {
     anchor.download = "cloudfore-metrics.csv";
     anchor.click();
     URL.revokeObjectURL(url);
+
+    showToast({
+      title: "CSV exported",
+      description: "The metrics report was downloaded successfully.",
+      tone: "success"
+    });
   }
 
   const loadUnsupported =

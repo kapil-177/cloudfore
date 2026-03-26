@@ -27,7 +27,10 @@ export const getLiveMetrics = asyncHandler(async (req, res) => {
 
 export const getMetricsHistory = asyncHandler(async (req, res) => {
   const projectId = req.query.projectId || null;
-  const limit = Number(req.query.limit) || 40;
+  const requestedLimit = Number(req.query.limit);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(requestedLimit, 1), 200)
+    : 40;
   const history = await getMetricHistory(projectId, limit);
 
   res.json({

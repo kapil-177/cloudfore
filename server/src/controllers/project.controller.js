@@ -30,11 +30,19 @@ function normalizeProject(project) {
 }
 
 export const getProjects = asyncHandler(async (req, res) => {
-  const projects = await listProjectsByUser(req.user._id);
+  const { items: projects, pagination } = await listProjectsByUser(req.user._id, {
+    page: req.query.page,
+    limit: req.query.limit,
+    search: req.query.search,
+    status: req.query.status,
+    type: req.query.type,
+    sort: req.query.sort
+  });
 
   res.json({
     success: true,
     count: projects.length,
+    pagination,
     data: projects.map(normalizeProject)
   });
 });
@@ -108,7 +116,7 @@ export const deleteProject = asyncHandler(async (req, res) => {
 });
 
 export const getProjectStats = asyncHandler(async (req, res) => {
-  const projects = await listProjectsByUser(req.user._id);
+  const { items: projects } = await listProjectsByUser(req.user._id, { limit: 1000 });
   const activeProjects = projects.filter((project) => project.status === "Running").length;
 
   res.json({

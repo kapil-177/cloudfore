@@ -1,5 +1,5 @@
 import express from "express";
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 
 import authMiddleware from "../middlewares/auth.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
@@ -16,7 +16,19 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get("/", getProjects);
+router.get(
+  "/",
+  [
+    query("page").optional().isInt({ min: 1 }),
+    query("limit").optional().isInt({ min: 1, max: 24 }),
+    query("search").optional().isString(),
+    query("status").optional().isIn(["Running", "Stopped", "Paused"]),
+    query("type").optional().isString(),
+    query("sort").optional().isIn(["newest", "oldest", "name-asc", "name-desc"])
+  ],
+  validateRequest,
+  getProjects
+);
 router.get("/stats/summary", getProjectStats);
 router.get(
   "/:id",

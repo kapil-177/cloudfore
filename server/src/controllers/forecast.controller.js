@@ -18,7 +18,12 @@ export const getForecastOverview = asyncHandler(async (req, res) => {
         memoryUsage: entry.memoryUsage,
         createdAt: entry.createdAt
       })),
-      recommendations
+      recommendations: recommendations.map((item) => ({
+        id: item._id,
+        title: item.title,
+        description: item.description || item.message || "",
+        priority: item.priority || item.severity || "low"
+      }))
     }
   });
 });

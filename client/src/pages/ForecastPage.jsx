@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { getForecastApi } from "../api/forecastApi";
 import AppShell from "../components/AppShell";
@@ -24,7 +24,7 @@ export default function ForecastPage() {
   const [error, setError] = useState("");
   const [forecastData, setForecastData] = useState(null);
 
-  async function loadForecast() {
+  const loadForecast = useCallback(async () => {
     try {
       const response = await getForecastApi();
       setForecastData(response.data.data || null);
@@ -34,7 +34,7 @@ export default function ForecastPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   usePolling(loadForecast, 5000);
 

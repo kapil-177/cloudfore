@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import {
@@ -9,6 +9,7 @@ import {
 } from "../api/serviceApi";
 import AppShell from "../components/AppShell";
 import Loader, { EmptyState, ErrorState } from "../components/Loader";
+import { useToast } from "../context/ToastContext";
 
 function getStatusBadge(status) {
   if (status === "Running") {
@@ -31,8 +32,16 @@ const initialForm = {
   autoStart: true
 };
 
+const defaultPagination = {
+  page: 1,
+  limit: 6,
+  totalItems: 0,
+  totalPages: 1
+};
+
 export default function ServicesPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [services, setServices] = useState([]);
@@ -43,6 +52,8 @@ export default function ServicesPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [sortBy, setSortBy] = useState("newest");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(defaultPagination);
 
   useEffect(() => {
     if (location.state?.openCreate) {
@@ -50,40 +61,69 @@ export default function ServicesPage() {
     }
   }, [location.state]);
 
-  async function loadServices() {
+  useEffect(() => {
+    setPage(1);
+  }, [search, sortBy, statusFilter, typeFilter]);
+
+  const loadServices = useCallback(async (nextPage = page) => {
     try {
       setLoading(true);
-      const response = await getServicesApi();
+      const response = await getServicesApi({
+        page: nextPage,
+        limit: pagination.limit,
+        search: search || undefined,
+        status: statusFilter === "All" ? undefined : statusFilter,
+        type: typeFilter === "All" ? undefined : typeFilter,
+        sort: sortBy
+      });
       setServices(response.data.data || []);
+      setPagination(response.data.pagination || defaultPagination);
+      setPage(response.data.pagination?.page || nextPage);
       setError("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load services");
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, pagination.limit, search, sortBy, statusFilter, typeFilter]);
 
   useEffect(() => {
-    loadServices();
-  }, []);
+    loadServices(page);
+  }, [loadServices, page]);
 
   async function addService(event) {
     event.preventDefault();
 
     if (!form.name.trim()) {
       setError("Service name is required");
+      showToast({
+        title: "Service name required",
+        description: "Add a name before creating the service.",
+        tone: "error"
+      });
       return;
     }
 
     try {
       setSubmitting(true);
       const response = await createServiceApi(form);
-      setServices((current) => [response.data.data, ...current]);
       setForm(initialForm);
       setShowForm(false);
       setError("");
+      showToast({
+        title: "Service created",
+        description: `${response.data.data.name} was added successfully.`,
+        tone: "success"
+      });
+      await loadServices(1);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create service");
+      const message = err.response?.data?.message || "Failed to create service";
+      setError(message);
+      showToast({
+        title: "Create failed",
+        description: message,
+        tone: "error"
+      });
     } finally {
       setSubmitting(false);
     }
@@ -92,9 +132,21 @@ export default function ServicesPage() {
   async function deleteService(id) {
     try {
       await deleteServiceApi(id);
-      setServices((current) => current.filter((service) => service.id !== id));
+      showToast({
+        title: "Service deleted",
+        description: "The service has been removed from the workspace.",
+        tone: "success"
+      });
+      const nextPage = services.length === 1 && page > 1 ? page - 1 : page;
+      await loadServices(nextPage);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete service");
+      const message = err.response?.data?.message || "Failed to delete service";
+      setError(message);
+      showToast({
+        title: "Delete failed",
+        description: message,
+        tone: "error"
+      });
     }
   }
 
@@ -106,55 +158,41 @@ export default function ServicesPage() {
       setServices((current) =>
         current.map((item) => (item.id === service.id ? response.data.data : item))
       );
+      showToast({
+        title: `Service ${nextStatus === "Running" ? "started" : "stopped"}`,
+        description: `${service.name} is now ${nextStatus}.`,
+        tone: "success"
+      });
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update service");
+      const message = err.response?.data?.message || "Failed to update service";
+      setError(message);
+      showToast({
+        title: "Status update failed",
+        description: message,
+        tone: "error"
+      });
     }
   }
-
-  const filteredServices = useMemo(() => {
-    return [...services]
-      .filter((service) => {
-        const query = search.trim().toLowerCase();
-
-        if (!query) {
-          return true;
-        }
-
-        return [service.name, service.desc, service.type, service.env, service.region]
-          .filter(Boolean)
-          .some((value) => value.toLowerCase().includes(query));
-      })
-      .filter((service) => (statusFilter === "All" ? true : service.status === statusFilter))
-      .filter((service) => (typeFilter === "All" ? true : service.type === typeFilter))
-      .sort((left, right) => {
-        if (sortBy === "name-asc") {
-          return left.name.localeCompare(right.name);
-        }
-
-        if (sortBy === "name-desc") {
-          return right.name.localeCompare(left.name);
-        }
-
-        const leftTime = new Date(left.createdAt || 0).getTime();
-        const rightTime = new Date(right.createdAt || 0).getTime();
-        return sortBy === "oldest" ? leftTime - rightTime : rightTime - leftTime;
-      });
-  }, [search, services, sortBy, statusFilter, typeFilter]);
 
   function resetFilters() {
     setSearch("");
     setStatusFilter("All");
     setTypeFilter("All");
     setSortBy("newest");
+    setPage(1);
   }
 
   return (
     <AppShell
       title="Service control"
-      subtitle="Manage your cloud resources with cleaner workflows, filter controls, and forecast-friendly metadata."
+      subtitle="Manage your cloud resources with cleaner workflows, server-side filtering, and paginated results."
       actions={
         <>
-          <button type="button" className="secondary-button" onClick={loadServices}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => loadServices(page)}
+          >
             Refresh
           </button>
           <button
@@ -342,7 +380,7 @@ export default function ServicesPage() {
           </div>
 
           <p className="status-text" style={{ marginTop: 14 }}>
-            Showing {filteredServices.length} of {services.length} services.
+            Showing page {pagination.page} of {pagination.totalPages}. {pagination.totalItems} matching services found.
           </p>
         </section>
 
@@ -353,17 +391,21 @@ export default function ServicesPage() {
             title="Could not load services"
             message={error}
             action={
-              <button type="button" className="primary-button" onClick={loadServices}>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => loadServices(page)}
+              >
                 Try again
               </button>
             }
           />
-        ) : filteredServices.length === 0 ? (
+        ) : services.length === 0 ? (
           <EmptyState
-            title={services.length ? "No services match these filters" : "No services yet"}
+            title={pagination.totalItems ? "No services on this page" : "No services yet"}
             message={
-              services.length
-                ? "Try a broader query or change one of the active filters."
+              pagination.totalItems
+                ? "Try moving back a page or changing the current filters."
                 : "Create your first service to start monitoring usage and predictions."
             }
             action={
@@ -378,7 +420,7 @@ export default function ServicesPage() {
           />
         ) : (
           <section className="stack">
-            {filteredServices.map((service) => (
+            {services.map((service) => (
               <article key={service.id} className="service-card">
                 <div style={{ flex: 1 }}>
                   <div className="button-row" style={{ justifyContent: "space-between" }}>
@@ -419,6 +461,40 @@ export default function ServicesPage() {
                 </div>
               </article>
             ))}
+
+            <div className="panel">
+              <div className="section-header" style={{ marginBottom: 0 }}>
+                <div>
+                  <h3>Pagination</h3>
+                  <p className="page-subtitle" style={{ margin: "6px 0 0" }}>
+                    Smaller result sets keep the interface fast as the dataset grows.
+                  </p>
+                </div>
+                <div className="button-row">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                    disabled={pagination.page <= 1}
+                  >
+                    Previous
+                  </button>
+                  <span className="tag">
+                    Page {pagination.page} / {pagination.totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() =>
+                      setPage((current) => Math.min(current + 1, pagination.totalPages))
+                    }
+                    disabled={pagination.page >= pagination.totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
           </section>
         )}
       </div>

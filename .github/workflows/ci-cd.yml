@@ -33,6 +33,10 @@ jobs:
           node --check src/server.js
           node --check src/app.js
 
+      - name: Run server tests
+        working-directory: server
+        run: npm test
+
       - name: Install client dependencies
         working-directory: client
         run: npm ci
